@@ -1,0 +1,9 @@
+{
+  "run_date": "2026-08-22",
+  "baseline_mean_score": 0.58,
+  "current_mean_score": 0.585,
+  "drift_in_std_units": 0.028,
+  "retrain_recommended": false,
+  "human_review_share": 0.583,
+  "rows_scored": 180
+}
