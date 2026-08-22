@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Refresh Priority Scoring — FlyRank ML Internship Capstone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#faf7f0;
+    --paper-raised:#f2ede2;
+    --ink:#2b2926;
+    --ink-soft:#5a554c;
+    --rule:#ddd4c2;
+    --accent:#3a6b62;      /* deep teal-green — growth/healthy */
+    --accent2:#b5563c;     /* muted clay — decline/refresh */
+    --accent-soft:#e9e2d0;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter', -apple-system, sans-serif;
+    line-height:1.65;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:0 24px 120px;}
+
+  /* ---- Masthead ---- */
+  .masthead{
+    padding:72px 0 40px;
+    border-bottom:1px solid var(--rule);
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:18px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:22px; height:1px;
+    background:var(--accent);
+    display:inline-block;
+  }
+  h1.title{
+    font-family:'Source Serif 4', Georgia, serif;
+    font-weight:700;
+    font-size:2.5rem;
+    line-height:1.15;
+    letter-spacing:-0.01em;
+    margin:0 0 20px;
+  }
+  .subtitle{
+    font-family:'Source Serif 4', Georgia, serif;
+    font-style:italic;
+    font-size:1.15rem;
+    color:var(--ink-soft);
+    margin:0 0 28px;
+  }
+  .meta-row{
+    display:flex; flex-wrap:wrap; gap:8px 28px;
+    font-size:13.5px;
+    color:var(--ink-soft);
+  }
+  .meta-row span b{color:var(--ink); font-weight:600;}
+  .meta-row a{color:var(--accent); text-decoration:none; border-bottom:1px solid transparent;}
+  .meta-row a:hover{border-bottom-color:var(--accent);}
+
+  .credit-strip{
+    margin-top:24px;
+    padding:10px 16px;
+    background:var(--accent-soft);
+    border-left:3px solid var(--accent);
+    font-size:13px;
+    color:var(--ink-soft);
+    font-family:'JetBrains Mono', monospace;
+  }
+  .credit-strip a{color:var(--accent); font-weight:500;}
+
+  /* ---- Abstract ---- */
+  .abstract{
+    margin:44px 0 8px;
+    padding:28px 32px;
+    background:var(--paper-raised);
+    border-radius:2px;
+    position:relative;
+  }
+  .abstract-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:12px;
+    display:block;
+  }
+  .abstract p{
+    font-family:'Source Serif 4', Georgia, serif;
+    font-size:1.02rem;
+    line-height:1.75;
+    color:var(--ink);
+    margin:0;
+  }
+
+  /* ---- TOC ---- */
+  nav.toc{
+    margin:36px 0 8px;
+    padding:18px 0;
+    border-top:1px solid var(--rule);
+    border-bottom:1px solid var(--rule);
+    font-size:13.5px;
+  }
+  nav.toc ol{
+    columns:2;
+    -webkit-columns:2;
+    list-style:none;
+    padding:0; margin:0;
+    counter-reset:toc;
+  }
+  nav.toc li{margin-bottom:8px; break-inside:avoid;}
+  nav.toc a{color:var(--ink-soft); text-decoration:none;}
+  nav.toc a:hover{color:var(--accent);}
+  nav.toc a::before{
+    content:counter(toc, decimal-leading-zero) "  ";
+    counter-increment:toc;
+    color:var(--accent);
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+  }
+
+  /* ---- Sections ---- */
+  section{margin:56px 0;}
+  h2{
+    font-family:'Source Serif 4', Georgia, serif;
+    font-weight:700;
+    font-size:1.55rem;
+    margin:0 0 6px;
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+  }
+  h2 .num{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.95rem;
+    color:var(--accent);
+    font-weight:500;
+  }
+  .section-hint{
+    font-size:13px;
+    color:var(--ink-soft);
+    font-style:italic;
+    margin:0 0 22px;
+  }
+  h3{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:1rem;
+    margin:26px 0 10px;
+  }
+  p{margin:0 0 16px; font-size:1rem;}
+  ul, ol{margin:0 0 16px; padding-left:22px;}
+  li{margin-bottom:6px;}
+  strong{font-weight:600;}
+  code{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.86em;
+    background:var(--paper-raised);
+    padding:1px 6px;
+    border-radius:3px;
+    color:var(--accent2);
+  }
+  pre{
+    background:#211f1c;
+    color:#e8e2d4;
+    padding:18px 20px;
+    border-radius:4px;
+    overflow-x:auto;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    line-height:1.6;
+  }
+  pre code{background:none; color:inherit; padding:0;}
+
+  /* ---- Tables ---- */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin:20px 0;
+    font-size:14px;
+  }
+  th{
+    text-align:left;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    padding:8px 14px;
+    border-bottom:2px solid var(--ink);
+  }
+  td{
+    padding:10px 14px;
+    border-bottom:1px solid var(--rule);
+  }
+  tr:last-child td{border-bottom:1px solid var(--rule);}
+  td.num, th.num{text-align:right; font-family:'JetBrains Mono', monospace;}
+  tr.highlight td{font-weight:700; color:var(--accent);}
+  tr.faded td{color:var(--ink-soft); font-style:italic;}
+
+  /* ---- Figures ---- */
+  figure{margin:28px 0; text-align:center;}
+  figure img{
+    max-width:100%;
+    border:1px solid var(--rule);
+    border-radius:4px;
+  }
+  figcaption{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    font-family:'Source Serif 4', serif;
+    font-style:italic;
+  }
+
+  /* ---- Callouts ---- */
+  .callout{
+    display:flex;
+    gap:14px;
+    padding:16px 20px;
+    margin:20px 0;
+    border-radius:4px;
+    font-size:14.5px;
+  }
+  .callout.warn{background:#f3e6df; border-left:3px solid var(--accent2);}
+  .callout.note{background:var(--accent-soft); border-left:3px solid var(--accent);}
+  .callout .icon{font-family:'JetBrains Mono', monospace; font-weight:700; flex-shrink:0;}
+
+  /* ---- Big stat row ---- */
+  .stat-row{
+    display:flex; gap:18px; flex-wrap:wrap;
+    margin:24px 0 8px;
+  }
+  .stat{
+    flex:1; min-width:140px;
+    padding:18px 18px 16px;
+    background:var(--paper-raised);
+    border-radius:4px;
+  }
+  .stat .val{
+    font-family:'Source Serif 4', serif;
+    font-weight:700;
+    font-size:1.9rem;
+    color:var(--accent);
+    line-height:1;
+  }
+  .stat.clay .val{color:var(--accent2);}
+  .stat .lbl{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+
+  /* ---- Footer ---- */
+  footer{
+    margin-top:80px;
+    padding-top:28px;
+    border-top:1px solid var(--rule);
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  footer a{color:var(--accent);}
+  .back-top{
+    display:inline-block;
+    margin-top:18px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    text-decoration:none;
+    border-bottom:1px dotted var(--rule);
+  }
+
+  @media (max-width:600px){
+    h1.title{font-size:1.9rem;}
+    .wrap{padding:0 18px 80px;}
+    nav.toc ol{columns:1;}
+    .abstract{padding:20px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="eyebrow">FlyRank ML Internship &nbsp;·&nbsp; Capstone Research Paper</div>
+    <h1 class="title">Refresh Priority Scoring</h1>
+    <p class="subtitle">Finding which content to refresh first — and proving the model actually beats a simple rule at it.</p>
+    <div class="meta-row">
+      <span><b>Author</b> — Ramanjeet Kaur</span>
+      <span><b>Lane</b> — Refresh / Content Opportunity Scoring</span>
+      <span><b>Repo</b> — <a href="https://github.com/ramanchauhan2271-dev/flyrank-ml-internship">github.com/ramanchauhan2271-dev/flyrank-ml-internship</a></span>
+      <span><b>Date</b> — August 2026</span>
+    </div>
+    <div class="credit-strip">
+      Built on the FlyRank ML Internship dataset — <a href="https://flyrank.ai">flyrank.ai</a>
+    </div>
+  </div>
+
+  <div class="abstract">
+    <span class="abstract-label">Abstract</span>
+    <p>
+      Content teams can't manually review every page, so the question this project asks is: which pages should
+      be refreshed first, and can a model beat a simple hand-written rule at picking the ones that are genuinely
+      declining? The approach builds 90-day traffic and engagement features from an anonymized slice of FlyRank's
+      content dataset (30,000 pages, 32 clients), trains a logistic regression and a random forest against a
+      transparent baseline rule, and validates with a client-grouped train/test split so no client's pages leak
+      across the split. Under this honest split, the best model reaches <strong>Precision@50 of 0.72–0.76</strong>,
+      versus the baseline rule's <strong>0.24</strong> — roughly a <strong>3× lift</strong> — after a leakage check
+      showed a naive random split had inflated the same model's score to 0.96 purely by memorizing per-client
+      traffic patterns. The features that actually drive the ranking are recency signals like impression and
+      session activity, not the label-adjacent trend fields, which were deliberately excluded. The output is a
+      ranked action queue with reason codes that flags roughly 30% of content for mandatory human review, built
+      as a prioritization aid, not an autonomous decision-maker.
+    </p>
+  </div>
+
+  <nav class="toc">
+    <ol>
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#data">Data</a></li>
+      <li><a href="#methodology">Methodology</a></li>
+      <li><a href="#results">Results</a></li>
+      <li><a href="#limitations">Limitations</a></li>
+      <li><a href="#recommendations">Ranked recommendations</a></li>
+      <li><a href="#reproducibility">Reproducibility</a></li>
+      <li><a href="#acknowledgments">Acknowledgments</a></li>
+    </ol>
+  </nav>
+
+  <section id="intro">
+    <h2><span class="num">01</span> Introduction / Problem Statement</h2>
+    <p>
+      Content teams sit on thousands of pages and can't manually audit all of them every week. The decision this
+      project supports is: given a page's traffic, engagement, and metadata signals, which pages are declining
+      and should be reviewed for refresh first — and is a learned score actually better than a simple,
+      explainable rule at making that call?
+    </p>
+    <p>
+      The unit of analysis is a single content page. The output is a ranked queue with a suggested action and a
+      reason code. The action a human takes from it is picking what to review first in a weekly planning cycle.
+      Getting this wrong is costly in both directions: refreshing healthy content wastes editorial time, while
+      missing a genuinely declining page means it keeps losing traffic unnoticed. Data/ML helps here because
+      "declining" isn't visible from any single metric — it's a pattern across traffic, engagement, and
+      content-age signals that a hand rule can only approximate.
+    </p>
+  </section>
+
+  <section id="data">
+    <h2><span class="num">02</span> Data</h2>
+    <ul>
+      <li><strong>Release:</strong> the anonymized starter slice, <code>data/raw/content_refresh_anonymized.csv</code>, processed into a 30,000-row × 52-column feature vector by <code>scripts/01_prepare_features.py</code>.</li>
+      <li><strong>Scope:</strong> 32 anonymized clients — <code>client_id</code> / <code>content_id</code> are pseudonymous, used only for grouping the split, never as model features.</li>
+      <li><strong>Date windows:</strong> rolling 90-day traffic/engagement windows (<code>log_impressions_90d</code>, <code>log_clicks_90d</code>, <code>log_sessions_90d</code>, <code>log_ai_sessions_90d</code>), plus <code>content_age_days</code> and <code>days_since_last_update</code>.</li>
+      <li><strong>Label:</strong> <code>is_declining_label = (trend_direction == "down")</code>.</li>
+      <li><strong>Excluded on purpose:</strong> <code>trend_direction</code> and <code>trend_pct</code> — both label-derived and a direct leakage risk (proven in Section 3).</li>
+    </ul>
+    <div class="callout note">
+      <span class="icon">✓</span>
+      <span><strong>Public-safe.</strong> No client names, domains, URLs, titles, or keywords appear anywhere in this dataset or paper, per the repo's <code>DATA_USE.md</code>.</span>
+    </div>
+  </section>
+
+  <section id="methodology">
+    <h2><span class="num">03</span> Methodology</h2>
+
+    <h3>Baseline</h3>
+    <p>A transparent, hand-written "fix this first" rule (Week 4) using visible signals only — no learned weights. It scores <strong>Precision@50 = 0.24</strong>.</p>
+
+    <h3>Models</h3>
+    <p>Logistic Regression and Random Forest on the numeric + categorical feature set: search volume, competition, CPC, word/char count, 90-day log-traffic features, content age, update recency, CTR, average position, and engagement-recency features.</p>
+
+    <h3>Split design</h3>
+    <p>A client-grouped <code>GroupShuffleSplit</code> holding out ~20% of <em>clients</em>, not rows — no client's pages appear in both train and test.</p>
+
+    <h3>Leakage checks</h3>
+    <ul>
+      <li>Confirmed <code>trend_direction</code> / <code>trend_pct</code> are absent from the feature set.</li>
+      <li><strong>Confession test:</strong> injecting <code>trend_pct</code> as a feature pushed Precision@50 from ~0.72 toward <strong>1.00</strong> — proof the validation harness catches a real leak.</li>
+      <li><strong>Random vs. grouped split</strong> on the identical model: random scored <strong>0.96</strong>, grouped scored <strong>0.72</strong> — a 0.24 gap that is mostly the model memorizing per-client traffic levels. The grouped number is reported as the result.</li>
+      <li>Base rate: 54.2% of pages are labeled declining — precision is read against that base rate, not in isolation.</li>
+    </ul>
+  </section>
+
+  <section id="results">
+    <h2><span class="num">04</span> Results <span style="font-weight:400; color:var(--ink-soft); font-size:1rem;">— vs. baseline</span></h2>
+
+    <figure>
+      <img src="results_precision50.png" alt="Bar chart comparing Precision@50 across baseline rule, Random Forest, and Logistic Regression">
+      <figcaption>Precision@50 on the identical client-grouped split. Logistic Regression is the best-performing honest model.</figcaption>
+    </figure>
+
+    <table>
+      <thead>
+        <tr><th>Model</th><th class="num">Precision@50</th><th class="num">Lift vs. baseline</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Week-4 Baseline (hand rule)</td><td class="num">0.24</td><td class="num">1.0×</td></tr>
+        <tr><td>Random Forest (grouped split)</td><td class="num">0.72</td><td class="num">3.0×</td></tr>
+        <tr class="highlight"><td>Logistic Regression (grouped split)</td><td class="num">0.76</td><td class="num">3.17×</td></tr>
+        <tr class="faded"><td>(random row split — not the reported result)</td><td class="num">0.96</td><td class="num">inflated by leakage</td></tr>
+      </tbody>
+    </table>
+
+    <p>Best model: Logistic Regression. Accuracy 0.57; precision 0.56 (not-declining) / 0.59 (declining); recall 0.62 / 0.53. Top-50 error analysis: 12/50 false positives, 9 of those tied to a single client — the model still over-indexes somewhat on client-level traffic even after grouping.</p>
+
+    <figure>
+      <img src="feature_importance.png" alt="Horizontal bar chart of top 5 permutation-importance features">
+      <figcaption>Top 5 features by permutation importance on the honest grouped-split model — dominated by recency signals, not the excluded trend fields.</figcaption>
+    </figure>
+  </section>
+
+  <section id="limitations">
+    <h2><span class="num">05</span> Limitations</h2>
+    <ul>
+      <li><strong>Correlational, not causal</strong> — the model finds association between recency/traffic signals and the decline label; it doesn't explain <em>why</em> a page is declining.</li>
+      <li><strong>Client concentration in errors</strong> — false positives clustered heavily around one client, so the score is directional, not a guarantee, for any single client.</li>
+      <li><strong>Small client pool</strong> — 32 clients isn't enough to claim the model generalizes to unseen client types.</li>
+      <li><strong>One bundled sample</strong> — numbers reflect a single anonymized pull; a fresh pull would move the exact decimals.</li>
+      <li><strong>Decision support only</strong> — see Section 6's human-review gate; nothing here auto-executes.</li>
+    </ul>
+  </section>
+
+  <section id="recommendations">
+    <h2><span class="num">06</span> Ranked Recommendations</h2>
+    <p>Built directly on this model's own held-out scores (6,163 real test-set pages, client-grouped split) — real <code>content_age_days</code>, <code>days_since_last_update</code>, and 30-day traffic change per page, not synthetic data.</p>
+
+    <div class="stat-row">
+      <div class="stat"><div class="val">29.8%</div><div class="lbl">flagged for mandatory human review</div></div>
+      <div class="stat clay"><div class="val">0.32</div><div class="lbl">median decay score (0=healthy, 1=decayed)</div></div>
+      <div class="stat"><div class="val">6,163</div><div class="lbl">pages scored, real held-out set</div></div>
+    </div>
+
+    <figure>
+      <img src="action_distribution.png" alt="Horizontal bar chart of recommended action counts across the held-out test set">
+      <figcaption>Recommended action distribution across all 6,163 held-out pages, from real predicted scores.</figcaption>
+    </figure>
+
+    <table>
+      <thead><tr><th>Action</th><th class="num">Count</th><th class="num">Share</th></tr></thead>
+      <tbody>
+        <tr><td>Monitor (light-touch)</td><td class="num">4,250</td><td class="num">69.0%</td></tr>
+        <tr><td>Boost</td><td class="num">1,029</td><td class="num">16.7%</td></tr>
+        <tr><td>Monitor</td><td class="num">481</td><td class="num">7.8%</td></tr>
+        <tr><td>Refresh</td><td class="num">273</td><td class="num">4.4%</td></tr>
+        <tr><td>Consolidate / Retire</td><td class="num">130</td><td class="num">2.1%</td></tr>
+      </tbody>
+    </table>
+
+    <p>Each action carries a <strong>reason code</strong> so a reviewer can see why — e.g. <code>RC01</code> = high decay score (≥0.6) + traffic down &gt;10% → time-sensitive refresh; <code>RC02</code> = traffic up &gt;20% → boost the momentum; <code>RC04</code> = old, low-traffic, high-decay → consolidation candidate.</p>
+
+    <div class="callout warn">
+      <span class="icon">!</span>
+      <span><strong>Human-in-the-loop by design.</strong> Every <code>Refresh</code> and <code>Consolidate/Retire</code> call, plus any borderline prediction near the decision boundary, is flagged for review. This is a prioritization aid — it never auto-publishes, auto-edits, or auto-deletes anything.</span>
+    </div>
+  </section>
+
+  <section id="reproducibility">
+    <h2><span class="num">07</span> Reproducibility</h2>
+    <p>To re-run this work from a fresh clone:</p>
+    <pre><code>git clone https://github.com/ramanchauhan2271-dev/flyrank-ml-internship
+cd flyrank-ml-internship
+pip install -r requirements.txt
+python scripts/01_prepare_features.py
+python scripts/02_baseline_score.py</code></pre>
+    <p>
+      Then open <code>work/notebooks/capstone.ipynb</code> and Run All — it reproduces the full pipeline end
+      to end (feature build → client-grouped split → baseline vs. model → leakage check → error analysis →
+      ranked recommendations) on the same bundled anonymized sample, with a fixed <code>random_state=42</code>
+      throughout. The three weekly notebooks behind it — <code>w05_model.ipynb</code>,
+      <code>w06_validation_audit.ipynb</code>, <code>w07_action_playbook.ipynb</code> — carry the intermediate
+      work this capstone consolidates. Exact numbers can shift a little with library versions; the ~3× lift
+      over baseline is the stable claim.
+    </p>
+  </section>
+
+  <section id="acknowledgments">
+    <h2><span class="num">08</span> Acknowledgments &amp; Data Credit</h2>
+    <p>
+      Built on the FlyRank ML Internship dataset — <a href="https://flyrank.ai">flyrank.ai</a>. Thanks to
+      Mirza Ašćerić (Director of AI Development) and the FlyRank ML track for the structured assignments
+      and live sessions this capstone builds on.
+    </p>
+  </section>
+
+  <footer>
+    <div class="credit-strip" style="margin-top:0;">
+      Built on the FlyRank ML Internship dataset — <a href="https://flyrank.ai">flyrank.ai</a>
+    </div>
+    <p style="margin-top:18px;">Repo: <a href="https://github.com/ramanchauhan2271-dev/flyrank-ml-internship">github.com/ramanchauhan2271-dev/flyrank-ml-internship</a></p>
+    <a class="back-top" href="#top">↑ back to top</a>
+  </footer>
+
+</div>
+</body>
+</html>
